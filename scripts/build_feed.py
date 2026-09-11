@@ -43,6 +43,14 @@ def detect_brand(title):
     return ""
 
 
+PACK_RE = re.compile(r"(\d+)\s*(?:ks|pcs|kusů|kusy|kus)\b", re.I)
+
+
+def detect_pack(description, title):
+    m = PACK_RE.search(description) or PACK_RE.search(title)
+    return int(m.group(1)) if m else None
+
+
 def split_title(title):
     # "GUESS jeans (Velkoobchod džíny Guess)" -> name, subtitle
     m = re.match(r"^(.*?)\s*\((.*)\)\s*$", title, re.S)
@@ -82,6 +90,7 @@ def main():
         images = [i for i in images if i]
         cat_path = [c.strip() for c in text(item, "g:product_type").split(">") if c.strip()]
         price = parse_price(text(item, "g:price"))
+        description = text(item, "g:description")
         products.append({
             "id": text(item, "g:id"),
             "title": title,
@@ -95,7 +104,8 @@ def main():
             "link": text(item, "link"),
             "image": images[0] if images else "",
             "images": images,
-            "description": text(item, "g:description"),
+            "pack": detect_pack(description, title),
+            "description": description,
         })
 
     out = {

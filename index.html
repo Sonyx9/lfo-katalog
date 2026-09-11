@@ -75,6 +75,12 @@ aside{position:sticky;top:78px;max-height:calc(100vh - 96px);overflow:auto;backg
 .reset{margin:10px 18px 4px;width:calc(100% - 36px);padding:10px;border:1px solid var(--line);background:transparent;border-radius:8px;font-weight:500}
 .reset:hover{border-color:var(--ink)}
 
+/* info banner */
+.note{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--accent);border-left-width:4px;border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;font-size:14px;line-height:1.5}
+.note b{font-weight:600}
+.note .ic{color:var(--accent-ink);flex:none;font-size:18px;line-height:1.2}
+.cb .pk{font-size:12px;color:var(--muted);flex-basis:100%}
+.cb .pk b{font-weight:600;color:var(--ink);font-size:12px}
 /* toolbar */
 .tb{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
 .tb .cnt{font-size:14px;color:var(--muted)}
@@ -224,6 +230,7 @@ footer a{color:var(--muted)}
   </aside>
 
   <main>
+    <div class="note"><span class="ic">ⓘ</span><div><b>Uvedené ceny jsou za celé velkoobchodní balení (box), ne za kus.</b> Počet kusů v balení a orientační přepočet na kus najdete u každého produktu. Výjimkou jsou ramínka a prodejní tašky, které se prodávají po 1 ks. „Cena na dotaz“ znamená, že cena ve feedu chybí.</div></div>
     <div class="tb">
       <div class="cnt">Zobrazeno <b id="shown">0</b> z <b id="total">0</b></div>
       <div class="chips" id="chips"></div>
@@ -381,6 +388,12 @@ footer a{color:var(--muted)}
 
   // ---------- grid ----------
   let current=[];
+  function packLine(p){
+    if(!p.pack)return '<div class="pk">balení: neuvedeno</div>';
+    if(p.pack===1)return '<div class="pk">cena za <b>1 ks</b></div>';
+    const per=p.price>0?` · ~<b>${fmt(Math.round(p.price/p.pack))}</b>/ks`:'';
+    return `<div class="pk">balení <b>${p.pack} ks</b>${per}</div>`;
+  }
   function card(p){
     return `<article class="card ${p.inStock?'':'out'}" data-id="${esc(p.id)}">
       <div class="ph">
@@ -392,7 +405,7 @@ footer a{color:var(--muted)}
         <div class="n">${esc(p.name)}</div>
         <div class="s">${esc(p.subtitle)}</div>
         <div class="cat">${esc(p.category.join(' › '))}</div>
-        <div class="pr">${p.price>0?`<b>${fmt(p.price)}</b>`:'<b class="ask">Cena na dotaz</b>'}<a href="${esc(p.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Na e-shop ↗</a></div>
+        <div class="pr">${p.price>0?`<b>${fmt(p.price)}</b>`:'<b class="ask">Cena na dotaz</b>'}<a href="${esc(p.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Na e-shop ↗</a>${packLine(p)}</div>
       </div>
     </article>`;
   }
@@ -427,6 +440,7 @@ footer a{color:var(--muted)}
         <div class="kv">
           <span>Kategorie</span><span>${esc(p.category.join(' › '))}</span>
           <span>Dostupnost</span><span class="st ${p.inStock?'':'out'}"><i></i>${p.inStock?'Skladem':'Vyprodáno'}</span>
+          <span>Balení</span><span>${p.pack?(p.pack===1?'1 ks (cena za kus)':`${p.pack} ks (cena za celé balení${p.price>0?', ~'+fmt(Math.round(p.price/p.pack))+' za kus':''})`):'neuvedeno'}</span>
           <span>ID produktu</span><span>${esc(p.id)}</span>
         </div>
         <div class="desc">${esc(p.description)}</div>
