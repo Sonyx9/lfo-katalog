@@ -1,0 +1,53 @@
+name: Aktualizace feedu a nasazení na Pages
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # každých 6 hodin
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stáhnout feed a vygenerovat products.json
+        run: python scripts/build_feed.py
+
+      - name: Commitnout změněná data
+        run: |
+          git config user.name "feed-bot"
+          git config user.email "feed-bot@users.noreply.github.com"
+          git add data/products.json
+          git diff --cached --quiet || git commit -m "chore: aktualizace feedu $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
