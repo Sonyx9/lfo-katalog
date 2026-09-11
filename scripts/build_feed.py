@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Stáhne Google Shopping XML feed a převede ho na data/products.json pro katalog."""
-import json, re, sys, urllib.request, datetime, pathlib
+import json, re, sys, urllib.request, datetime, pathlib, socket
 import xml.etree.ElementTree as ET
 
 FEED_URL = "https://www.luxuryfashionoutlet.eu/fotky61494/xml/google_nakupy.xml"
@@ -54,8 +54,20 @@ def split_title(title):
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else FEED_URL
     if src.startswith("http"):
-        req = urllib.request.Request(src, headers={"User-Agent": "lfo-katalog-bot/1.0"})
-        raw = urllib.request.urlopen(req, timeout=60).read()
+        # GitHub runnery nemají IPv6 – vynutíme IPv4 (host má A i AAAA záznam).
+        _orig = socket.getaddrinfo
+        socket.getaddrinfo = lambda *a, **k: [r for r in _orig(*a, **k) if r[0] == socket.AF_INET] or _orig(*a, **k)
+        req = urllib.request.Request(src, headers={"User-Agent": "Mozilla/5.0 (compatible; lfo-katalog-bot/1.0)"})
+        last = None
+        for attempt in range(3):
+            try:
+                raw = urllib.request.urlopen(req, timeout=60).read()
+                break
+            except Exception as e:  # noqa: BLE001
+                last = e
+                print(f"pokus {attempt + 1} selhal: {e}", file=sys.stderr)
+        else:
+            raise last
     else:
         raw = pathlib.Path(src).read_bytes()
 

@@ -27,7 +27,13 @@ jobs:
           python-version: "3.12"
 
       - name: Stáhnout feed a vygenerovat products.json
+        id: feed
+        continue-on-error: true
         run: python scripts/build_feed.py
+
+      - name: Feed nedostupný – ponechávám poslední data
+        if: steps.feed.outcome == 'failure'
+        run: echo "::warning::Feed se nepodařilo stáhnout, nasazuji poslední commitnutá data."
 
       - name: Commitnout změněná data
         run: |
